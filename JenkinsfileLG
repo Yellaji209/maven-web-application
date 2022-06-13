@@ -1,0 +1,25 @@
+node {
+    def mavenHome = tool name: "maven 3.8.5"
+    stage ('checkoutCode'){
+        git branch: 'development', credentialsId: 'aeb24f6a-f0b2-4fad-a12c-461d34071873', url: 'https://github.com/Yellaji209/maven-web-application.git'
+    }
+    
+    stage ('Build'){
+        sh "${mavenHome}/bin/mvn clean package"
+    }
+    
+    stage ('ExecuteSonarQubeReport'){
+        sh "${mavenHome}/bin/mvn sonar:sonar"
+    }
+    
+    stage ('UploadArtifactInto Nexus'){
+        sh "${mavenHome}/bin/mvn deploy"
+    }
+    
+    stage ('DeployIntoTomcat'){
+    sshagent(['308376b5-379b-4f3a-b46b-e96a25a27b81']) {
+        sh "scp -o StrictHostKeyChecking=no /var/lib/jenkins/workspace/facebook-pipe/target/maven-web-application.war ec2-user@3.108.252.145:/opt/apache-tomcat-9.0.63/webapps/maven-web-app.war"
+    }
+    }
+}
+
